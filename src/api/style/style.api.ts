@@ -49,6 +49,34 @@ async function submitAndPollStyleAnalysis<T extends { status: Status }>(
   throw new Error(`${endpoint} failed with status: ${polledResponse.status}`);
 }
 
+export interface ExtendedAnalysisSuccessResponse extends AnalysisSuccessResponse {
+  workflow_id: string;
+}
+
+async function submitAndPollStyleAnalysisWithWorkflowId(
+  endpoint: string,
+  request: StyleAnalysisRequest,
+  apiKey: string,
+): Promise<ExtendedAnalysisSuccessResponse> {
+  const formData = createStyleFormData(request);
+  const initialResponse = await postData<AnalysisSubmissionResponse>(endpoint, formData, apiKey);
+
+  if (!initialResponse.workflow_id) {
+    throw new Error(`No workflow_id received from initial ${endpoint} request`);
+  }
+
+  const polledResponse = await pollWorkflowForResult<AnalysisSuccessResponse>(
+    initialResponse.workflow_id,
+    endpoint,
+    apiKey,
+  );
+
+  if (polledResponse.status === Status.Completed) {
+    return { workflow_id: initialResponse.workflow_id, ...polledResponse };
+  }
+  throw new Error(`${endpoint} failed with status: ${polledResponse.status}`);
+}
+
 // Style Guide Operations
 export async function listStyleGuides(apiKey: string): Promise<StyleGuides> {
   return getData<StyleGuides>(API_ENDPOINTS.STYLE_GUIDES, apiKey);
@@ -85,6 +113,13 @@ export async function styleCheck(
   apiKey: string,
 ): Promise<StyleAnalysisSuccessResp> {
   return submitAndPollStyleAnalysis<StyleAnalysisSuccessResp>(API_ENDPOINTS.STYLE_CHECKS, styleAnalysisRequest, apiKey);
+}
+
+export async function styleCheckWithWorkflowId(
+  styleAnalysisRequest: StyleAnalysisRequest,
+  apiKey: string,
+): Promise<ExtendedAnalysisSuccessResponse> {
+  return submitAndPollStyleAnalysisWithWorkflowId(API_ENDPOINTS.STYLE_CHECKS, styleAnalysisRequest, apiKey);
 }
 
 export async function styleSuggestions(
