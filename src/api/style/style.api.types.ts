@@ -110,6 +110,7 @@ export interface StyleAnalysisErrorResp extends ResponseBase {
 
 export interface StyleAnalysisReq {
   content: string | FileDescriptor | BufferDescriptor;
+  content_type?: string; // Optional content type for the file upload, for string content it defaults to text/plain
   style_guide: string; // Can be style guide ID or name (e.g. 'ap', 'chicago', 'microsoft')
   dialect: string;
   tone: string;
