@@ -135,7 +135,11 @@ export async function createStyleFormData(request: StyleAnalysisReq): Promise<Fo
   const filename = request.documentName || 'unknown.txt';
 
   if (typeof request.content === 'string') {
-    formData.append('file_upload', new Blob([request.content], { type: 'text/plain' }), filename);
+    formData.append(
+      'file_upload',
+      new Blob([request.content], { type: request.content_type || 'text/plain' }),
+      filename,
+    );
   } else if (typeof File !== 'undefined' && 'file' in request.content && request.content.file instanceof File) {
     const fileDescriptor = request.content as FileDescriptor;
     formData.append('file_upload', fileDescriptor.file, filename);
